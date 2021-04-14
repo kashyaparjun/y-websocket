@@ -25,6 +25,7 @@ const messageSync = 0
 const messageQueryAwareness = 3
 const messageAwareness = 1
 const messageAuth = 2
+const WEB_AUTH_FAILED = 4000;
 
 /**
  *                       encoder,          decoder,          provider,          emitSynced, messageType
@@ -102,7 +103,7 @@ const setupWS = provider => {
         websocket.send(encoding.toUint8Array(encoder))
       }
     }
-    websocket.onclose = () => {
+    websocket.onclose = (e) => {
       provider.ws = null
       provider.wsconnecting = false
       if (provider.wsconnected) {
@@ -115,6 +116,13 @@ const setupWS = provider => {
         }])
       } else {
         provider.wsUnsuccessfulReconnects++
+      }
+
+      if(e.code === WEB_AUTH_FAILED) {
+        provider.emit('auth_failed', [{
+          code: e.code
+        }]);
+        return;
       }
       // Start with no reconnect timeout and increase timeout by
       // log10(wsUnsuccessfulReconnects).
